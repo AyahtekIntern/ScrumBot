@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { projects } from '../data.js';
 
 export const data = new SlashCommandBuilder()
@@ -12,11 +12,15 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
     const projectName = interaction.options.getString('project_name');
     
-    // Add to the global projects list in data.js
     projects.push(projectName);
 
+    const projectEmbed = new EmbedBuilder()
+        .setColor(0x2ECC71)
+        .setTitle('Project Added')
+        .setDescription(`Project **${projectName}** has been added to the list.`);
+
     await interaction.reply({
-        content: `Project **${projectName}** added successfully!`,
+        embeds: [projectEmbed],
         ephemeral: true
     });
 }

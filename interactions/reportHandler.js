@@ -43,6 +43,7 @@ export async function handleModalSubmit(interaction) {
 
     reports.push({
         username: interaction.user.username,
+        userId: interaction.member.id,
         project: projectName,
         role: role,
         timestamp: new Date()
