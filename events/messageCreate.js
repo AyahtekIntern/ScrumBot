@@ -4,6 +4,8 @@ import Report from '../models/Report.js'; import { reports } from '../data.js';
 export async function execute(message) {
     if (message.author.bot) return;
 
+    if (message.content !== '!scrum-update') return;
+
     try {
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
@@ -15,7 +17,12 @@ export async function execute(message) {
             date: { $gte: startOfDay, $lte: endOfDay }
         });
 
-        const members = await message.guild.members.fetch();
+        let members = message.guild.members.cache;
+
+        if (members.size <= 1) { 
+            members = await message.guild.members.fetch(); 
+        }
+
         const humanMembers = members.filter(member => !member.user.bot);
 
             if (humanMembers.size === 0) {

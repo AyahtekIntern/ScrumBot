@@ -5,6 +5,7 @@ import * as addReport from './commands/add-report.js';
 import * as addProject from './commands/add-project.js';
 import * as reportHandler from './interactions/reportHandler.js';
 import * as scrumMessage from './events/messageCreate.js';
+import * as helpMessage from './events/helpMessage.js';
 import mongoose from 'mongoose';
 
 
@@ -33,6 +34,7 @@ client.commands.set(addReport.data.name, addReport);
 client.commands.set(addProject.data.name, addProject);
 
 client.on('messageCreate', scrumMessage.execute );
+client.on('messageCreate', helpMessage.execute );
 
 client.on('interactionCreate', async (interaction) => {
     if (interaction.isChatInputCommand()) {

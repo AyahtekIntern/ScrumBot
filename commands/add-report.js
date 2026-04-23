@@ -1,5 +1,6 @@
-import { SlashCommandBuilder, StringSelectMenuBuilder, ActionRowBuilder } from 'discord.js';
+import { SlashCommandBuilder, StringSelectMenuBuilder, ActionRowBuilder, EmbedBuilder, ButtonBuilder } from 'discord.js';
 import Project from '../models/Project.js'; 
+import Role from '../models/Role.js';
 
 export const data = new SlashCommandBuilder()
     .setName('add-report')
@@ -7,8 +8,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
     try {
-        // Fetch all projects from MongoDB
-        const projects = await Project.find();
+        const [projects, roles] = await Promise.all([
+            Project.find(),
+            Role.find()
+        ]);
 
         if (projects.length === 0) {
             return interaction.reply({
@@ -17,20 +20,34 @@ export async function execute(interaction) {
             });
         }
 
-        // Map the database results to the Discord Select Menu format
-        const selectMenu = new StringSelectMenuBuilder()
+        const prEmbed = new EmbedBuilder()
+            .setColor(0x3498DB)
+            .setTitle('Submit Daily Scrum Report')
+            .setDescription('Select **Project** and **Role** below to start: ');
+
+        const projectMenu = new StringSelectMenuBuilder()
             .setCustomId('project_select')
             .setPlaceholder('Select a project')
-            .addOptions(
-                projects.map(proj => ({ 
-                    label: proj.name, 
-                    value: proj.name 
-                }))
-            );
+            .addOptions(projects.map(proj => ({ label: proj.name, value: proj.name })));
+        
+        const roleMenu = new StringSelectMenuBuilder()
+            .setCustomId('role_select')
+            .setPlaceholder('Select your role')
+            .addOptions(roles.map(role => ({ label: role.name, value: role.name })));
+
+        const writeButton = new ButtonBuilder()
+            .setCustomId('open_report_modal')
+            .setLabel('Write Report')
+            .setStyle('Success')
+            .setDisabled(true);
 
         await interaction.reply({
-            content: 'Select a project:',
-            components: [new ActionRowBuilder().addComponents(selectMenu)],
+            embeds: [prEmbed],
+            components: [
+                new ActionRowBuilder().addComponents(projectMenu),
+                new ActionRowBuilder().addComponents(roleMenu),
+                new ActionRowBuilder().addComponents(writeButton)
+            ],
             ephemeral: true
         });
 

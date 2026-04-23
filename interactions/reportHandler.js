@@ -2,42 +2,36 @@ import { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ModalBuilder,
 import Report from '../models/Report.js';
 import Role from '../models/Role.js'; 
 
-export async function handleProjectSelect(interaction) {
-    const selectedProject = interaction.values[0];
+export async function handleSelection(interaction) {
+    const { components } = interaction.message;
+    const selectedValue = interaction.values[0];
+    const isProject = interaction.customId === 'project_select';
 
-    try {
-        // Fetch available roles from MongoDB
-        const rolesData = await Role.find();
-
-        if (rolesData.length === 0) {
-            return interaction.update({
-                content: `Project: **${selectedProject}**. \n\n**Error:** No roles exist in the database. You must add roles before users can submit reports.`,
-                components: [],
-                ephemeral: true
-            });
+    const newRows = components.map((row, index) => {
+        const actionRow = ActionRowBuilder.from(row);
+        
+        if ((isProject && index === 0) || (!isProject && index === 1)) {
+            const menu = StringSelectMenuBuilder.from(row.components[0])
+                .setPlaceholder(`Selected: ${selectedValue}`);
+            actionRow.setComponents(menu);
         }
+        return actionRow;
+    });
 
-        const roleMenu = new StringSelectMenuBuilder()
-            .setCustomId(`role_select_${selectedProject}`)
-            .setPlaceholder('Select your role')
-            // Map the database documents to the Discord Select Menu options
-            .addOptions(rolesData.map(role => ({ label: role.name, value: role.name })));
+    const projPlaceholder = newRows[0].components[0].data.placeholder;
+    const rolePlaceholder = newRows[1].components[0].data.placeholder;
+    const isReady = projPlaceholder.includes('Selected:') && rolePlaceholder.includes('Selected:');
 
-        await interaction.update({
-            content: `Project: **${selectedProject}**. Now select your role:`,
-            components: [new ActionRowBuilder().addComponents(roleMenu)],
-            ephemeral: true
-        });
-
-    } catch (error) {
-        console.error('Database error fetching roles:', error);
-        await interaction.update({ 
-            content: 'Failed to retrieve roles from the database.', 
-            components: [], 
-            ephemeral: true 
-        });
+    if (isReady) {
+        const enabledButton = ButtonBuilder.from(newRows[2].components[0]).setDisabled(false);
+        newRows[2].setComponents(enabledButton);
     }
+
+    await interaction.update({ 
+        components: newRows 
+    });
 }
+
 
 export async function handleOpenModal(interaction) {
     const project = interaction.message.components[0].components[0].placeholder.split(': ')[1];
@@ -76,11 +70,13 @@ export async function handleOpenModal(interaction) {
 
 
 export async function handleModalSubmit(interaction) {
-    const [, , projectName, role] = interaction.customId.split('_');
+    const parts = interaction.customId.split('_');
+
+    const role = parts.pop();
+    const projectName = parts.slice(2).join('_');
     
     const updates = interaction.fields.getTextInputValue('update_input');
     const plans = interaction.fields.getTextInputValue('plan_input');
-    // Extract using the new ID
     const impediments = interaction.fields.getTextInputValue('impediments_input') || "None"; 
 
     try {
@@ -92,6 +88,21 @@ export async function handleModalSubmit(interaction) {
             plans: plans,
             impediments: impediments
         });
+        const successEmbed = new EmbedBuilder()
+            .setColor(0x2ECC71)
+            .setTitle('Scrum Report Submitted')
+            .setDescription(`Successfully saved update for **${projectName}**.`)
+            .addFields(
+                { name: 'Role', value: role, inline: true },
+                { name: 'User', value: interaction.member.Display, inline: true }
+            )
+            .setTimestamp();
+
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ embeds: [successEmbed], flags: [MessageFlags.Ephemeral] });
+        } else {
+            await interaction.reply({ embeds: [successEmbed], flags: [MessageFlags.Ephemeral] });
+        }
 
         await interaction.reply({ content: `Report submitted for **${projectName}**!`, ephemeral: true });
     } catch (error) {
