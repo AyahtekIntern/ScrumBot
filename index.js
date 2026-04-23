@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
-import { projects } from './data.js';
 import * as addReport from './commands/add-report.js';
 import * as addProject from './commands/add-project.js';
 import * as reportHandler from './interactions/reportHandler.js';

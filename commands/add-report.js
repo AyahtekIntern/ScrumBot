@@ -1,5 +1,4 @@
 import { SlashCommandBuilder, StringSelectMenuBuilder, ActionRowBuilder } from 'discord.js';
-import { projects } from '../data.js';
 
 export const data = new SlashCommandBuilder()
     .setName('add-report')

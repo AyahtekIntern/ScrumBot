@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { reports } from '../data.js';
+
 
 export async function execute(message) {
     if (message.author.bot || !message.content.startsWith('!scrum-update')) return;
