@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { projects } from '../data.js';
+import Project from '../models/Project.js'; 
 
 export const data = new SlashCommandBuilder()
     .setName('add-project')
@@ -12,15 +12,34 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
     const projectName = interaction.options.getString('project_name');
     
-    projects.push(projectName);
+    try {
+        // 1. Check if the project already exists to prevent duplicate errors
+        const existingProject = await Project.findOne({ name: projectName });
+        if (existingProject) {
+            return interaction.reply({
+                content: `The project **${projectName}** already exists in the database.`,
+                ephemeral: true
+            });
+        }
 
-    const projectEmbed = new EmbedBuilder()
-        .setColor(0x2ECC71)
-        .setTitle('Project Added')
-        .setDescription(`Project **${projectName}** has been added to the list.`);
+        // 2. Save the new project to MongoDB
+        await Project.create({ name: projectName });
 
-    await interaction.reply({
-        embeds: [projectEmbed],
-        ephemeral: true
-    });
+        const projectEmbed = new EmbedBuilder()
+            .setColor(0x2ECC71)
+            .setTitle('Project Added')
+            .setDescription(`Project **${projectName}** has been added to the database.`);
+
+        await interaction.reply({
+            embeds: [projectEmbed],
+            ephemeral: true
+        });
+
+    } catch (error) {
+        console.error('Database error in add-project:', error);
+        await interaction.reply({
+            content: 'An error occurred while saving to the database.',
+            ephemeral: true
+        });
+    }
 }
