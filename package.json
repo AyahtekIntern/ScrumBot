@@ -12,6 +12,8 @@
   "type": "module",
   "dependencies": {
     "discord.js": "^14.26.3",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "mongodb": "^7.2.0",
+    "mongoose": "^9.5.0"
   }
 }

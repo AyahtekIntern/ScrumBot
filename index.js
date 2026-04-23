@@ -4,9 +4,25 @@ import * as addReport from './commands/add-report.js';
 import * as addProject from './commands/add-project.js';
 import * as reportHandler from './interactions/reportHandler.js';
 import * as scrumUpdate from './events/messageCreate.js';
+import mongoose from 'mongoose';
+
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers],
+});
+
+client.once('clientReady', async () => {
+    console.log(`Logged in as ${client.user.tag}!`);
+
+    // Connect to MongoDB
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+        family: 4 // Forces IPv4 DNS resolution
+    });
+    console.log('Connected to MongoDB successfully.');
+    } catch (error) {
+        console.log('Error connecting to MongoDB:', error);
+    }
 });
 
 client.commands = new Collection();

@@ -1,10 +1,20 @@
 import { EmbedBuilder } from 'discord.js';
-
+import Report from '../models/Report.js'; 
 
 export async function execute(message) {
     if (message.author.bot || !message.content.startsWith('!scrum-update')) return;
 
     try {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const todaysReports = await Report.find({
+            date: { $gte: startOfDay, $lte: endOfDay }
+        });
+
         const members = await message.guild.members.fetch();
         const humanMembers = members.filter(member => !member.user.bot);
 
@@ -13,26 +23,26 @@ export async function execute(message) {
         }
 
         const scrumFields = humanMembers.map(member => {
-            const hasUpdated = reports.some(r => String(r.userId) === String(member.id));
+            // Background match using the system username stored in the database
+            const hasUpdated = todaysReports.some(r => r.username === member.user.username);
             
             return {
-                name: member.displayName || "Unknown User",
-                value: hasUpdated ? 'Submitted' : 'No Updates',
-                inline: true 
+                name: member.displayName, 
+                value: hasUpdated ? 'Submitted' : 'No Updates'
             };
         });
 
         const scrumEmbed = new EmbedBuilder()
             .setColor(0x2ECC71)
             .setTitle('Daily Scrum Status')
-            .setDescription(`Checking status for ${humanMembers.size} members:`) 
+            .setDescription(`Checking status for ${humanMembers.size} members for today:`) 
             .addFields(scrumFields)
             .setTimestamp();
 
         await message.channel.send({ embeds: [scrumEmbed] });
 
     } catch (error) {
-        console.error("Crash caught:", error);
-        await message.channel.send("Error: Check bot console. Likely an empty data field.");
+        console.error("Database or execution error in scrum-update:", error);
+        await message.channel.send("Error processing the scrum update. Check the bot console.");
     }
 }

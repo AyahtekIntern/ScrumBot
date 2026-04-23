@@ -1,18 +1,42 @@
 import { ActionRowBuilder, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { roles, reports } from '../data.js';
+import Report from '../models/Report.js';
+import Role from '../models/Role.js'; 
 
 export async function handleProjectSelect(interaction) {
     const selectedProject = interaction.values[0];
-    const roleMenu = new StringSelectMenuBuilder()
-        .setCustomId(`role_select_${selectedProject}`)
-        .setPlaceholder('Select your role')
-        .addOptions(roles.map(role => ({ label: role, value: role })));
 
-    await interaction.update({
-        content: `Project: **${selectedProject}**. Now select your role:`,
-        components: [new ActionRowBuilder().addComponents(roleMenu)],
-        ephemeral: true
-    });
+    try {
+        // Fetch available roles from MongoDB
+        const rolesData = await Role.find();
+
+        if (rolesData.length === 0) {
+            return interaction.update({
+                content: `Project: **${selectedProject}**. \n\n**Error:** No roles exist in the database. You must add roles before users can submit reports.`,
+                components: [],
+                ephemeral: true
+            });
+        }
+
+        const roleMenu = new StringSelectMenuBuilder()
+            .setCustomId(`role_select_${selectedProject}`)
+            .setPlaceholder('Select your role')
+            // Map the database documents to the Discord Select Menu options
+            .addOptions(rolesData.map(role => ({ label: role.name, value: role.name })));
+
+        await interaction.update({
+            content: `Project: **${selectedProject}**. Now select your role:`,
+            components: [new ActionRowBuilder().addComponents(roleMenu)],
+            ephemeral: true
+        });
+
+    } catch (error) {
+        console.error('Database error fetching roles:', error);
+        await interaction.update({ 
+            content: 'Failed to retrieve roles from the database.', 
+            components: [], 
+            ephemeral: true 
+        });
+    }
 }
 
 export async function handleRoleSelect(interaction) {
@@ -23,31 +47,53 @@ export async function handleRoleSelect(interaction) {
         .setCustomId(`report_modal_${selectedProject}_${selectedRole}`)
         .setTitle(`Scrum: ${selectedProject}`);
 
-    const updateInput = new TextInputBuilder().setCustomId('update_input').setLabel('Updates').setStyle(TextInputStyle.Paragraph);
-    const planInput = new TextInputBuilder().setCustomId('plan_input').setLabel('Plans').setStyle(TextInputStyle.Paragraph);
-    const blockersInput = new TextInputBuilder().setCustomId('blockers_input').setLabel('Blockers').setStyle(TextInputStyle.Paragraph).setRequired(false);
+    const updateInput = new TextInputBuilder()
+        .setCustomId('update_input')
+        .setLabel('Updates')
+        .setStyle(TextInputStyle.Paragraph);
+        
+    const planInput = new TextInputBuilder()
+        .setCustomId('plan_input')
+        .setLabel('Plans')
+        .setStyle(TextInputStyle.Paragraph);
+        
+    // Updated label and ID to align with convention
+    const impedimentsInput = new TextInputBuilder()
+        .setCustomId('impediments_input') 
+        .setLabel('Impediments')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false);
 
-        modal.addComponents(
-            new ActionRowBuilder().addComponents(updateInput),
-            new ActionRowBuilder().addComponents(planInput),
-            new ActionRowBuilder().addComponents(blockersInput)
-        );
-
+    modal.addComponents(
+        new ActionRowBuilder().addComponents(updateInput),
+        new ActionRowBuilder().addComponents(planInput),
+        new ActionRowBuilder().addComponents(impedimentsInput)
+    );
 
     await interaction.showModal(modal);
 }
 
 export async function handleModalSubmit(interaction) {
     const [, , projectName, role] = interaction.customId.split('_');
-    const update = interaction.fields.getTextInputValue('update_input');
+    
+    const updates = interaction.fields.getTextInputValue('update_input');
+    const plans = interaction.fields.getTextInputValue('plan_input');
+    // Extract using the new ID
+    const impediments = interaction.fields.getTextInputValue('impediments_input') || "None"; 
 
-    reports.push({
-        username: interaction.user.username,
-        userId: interaction.member.id,
-        project: projectName,
-        role: role,
-        timestamp: new Date()
-    });
+    try {
+        await Report.create({
+            username: interaction.user.username,
+            projectName: projectName,
+            role: role,
+            updates: updates,
+            plans: plans,
+            impediments: impediments
+        });
 
-    await interaction.reply({ content: `Report submitted for **${projectName}**!`, ephemeral: true });
+        await interaction.reply({ content: `Report submitted for **${projectName}**!`, ephemeral: true });
+    } catch (error) {
+        console.error('Database error in handleModalSubmit:', error);
+        await interaction.reply({ content: 'An error occurred while saving your report to the database.', ephemeral: true });
+    }
 }
