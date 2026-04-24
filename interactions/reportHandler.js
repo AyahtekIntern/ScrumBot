@@ -1,4 +1,4 @@
-import { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder } from 'discord.js';
+import { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, MessageFlags } from 'discord.js';
 import Report from '../models/Report.js';
 import Role from '../models/Role.js'; 
 
@@ -88,25 +88,35 @@ export async function handleModalSubmit(interaction) {
             plans: plans,
             impediments: impediments
         });
+
         const successEmbed = new EmbedBuilder()
             .setColor(0x2ECC71)
             .setTitle('Scrum Report Submitted')
             .setDescription(`Successfully saved update for **${projectName}**.`)
             .addFields(
                 { name: 'Role', value: role, inline: true },
-                { name: 'User', value: interaction.member.Display, inline: true }
+                { name: 'User', value: interaction.member.displayName || interaction.user.username, inline: true }
             )
             .setTimestamp();
 
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ embeds: [successEmbed], flags: [MessageFlags.Ephemeral] });
+        if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ embeds: [successEmbed] });
         } else {
-            await interaction.reply({ embeds: [successEmbed], flags: [MessageFlags.Ephemeral] });
+            await interaction.reply({ 
+                embeds: [successEmbed], 
+                flags: [MessageFlags.Ephemeral] 
+            });
         }
 
-        await interaction.reply({ content: `Report submitted for **${projectName}**!`, ephemeral: true });
     } catch (error) {
         console.error('Database error in handleModalSubmit:', error);
-        await interaction.reply({ content: 'An error occurred while saving your report to the database.', ephemeral: true });
+        
+        const errorMsg = { content: 'An error occurred while saving your report.', flags: [MessageFlags.Ephemeral] };
+        
+        if (interaction.deferred || interaction.replied) {
+            await interaction.editReply(errorMsg);
+        } else {
+            await interaction.reply(errorMsg);
+        }
     }
 }
