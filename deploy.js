@@ -15,8 +15,12 @@ const commands = [
 
     new SlashCommandBuilder()
         .setName('scrum')
-        .setDescription('Show list of all existing projects and roles')
+        .setDescription('Show list of all existing projects and roles'),
 
+    new SlashCommandBuilder()
+        .setName('scrum-update')
+        .setDescription('View today\'s updates, plans, and impediments for a selected project')
+        
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);

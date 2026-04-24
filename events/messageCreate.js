@@ -1,5 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import Report from '../models/Report.js'; import { reports } from '../data.js';
+
 
 export async function execute(message) {
     if (message.author.bot) return;

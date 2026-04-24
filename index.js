@@ -1,10 +1,11 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
-import { projects } from './data.js';
 import * as addReport from './commands/add-report.js';
 import * as addProject from './commands/add-project.js';
 import * as scrumCmd from './commands/scrum.js'
+import * as scrumUpdate from './commands/scrum-update.js';
 import * as reportHandler from './interactions/reportHandler.js';
+import * as scrumUpdateHandler from './interactions/scrumUpdateHandler.js';
 import * as scrumMessage from './events/messageCreate.js';
 import * as helpMessage from './events/helpMessage.js';
 import * as scrumHandler from './interactions/scrumHandler.js'
@@ -34,6 +35,7 @@ client.commands = new Collection();
 client.commands.set(addReport.data.name, addReport);
 client.commands.set(addProject.data.name, addProject);
 client.commands.set(scrumCmd.data.name, scrumCmd);
+client.commands.set(scrumUpdate.data.name, scrumUpdate);
 
 client.on('messageCreate', scrumMessage.execute );
 client.on('messageCreate', helpMessage.execute );
@@ -61,6 +63,10 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.customId.startsWith('scrum_')) {
             return await scrumHandler.handleButtons(interaction);
         }
+
+        if (interaction.customId === 'scrum_update_project_select') {
+            await scrumUpdateHandler.handleProjectSelect(interaction);
+        }
     }
 
     if (interaction.isModalSubmit()) {
@@ -71,6 +77,15 @@ client.on('interactionCreate', async (interaction) => {
             return await scrumHandler.handleModalSubmit(interaction);
         }
     }
+
+    if (interaction.isButton() && interaction.customId.startsWith('scrum_update_view_')) {
+        await scrumUpdateHandler.handleViewToggle(interaction);
+    }
+
+    if (interaction.isModalSubmit() && interaction.customId.startsWith('report_modal_')) {
+        await reportHandler.handleModalSubmit(interaction);
+    }
+
 });
 
 client.login(process.env.DISCORD_TOKEN);
