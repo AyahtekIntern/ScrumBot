@@ -11,7 +11,10 @@ const commands = [
         .addStringOption(option => 
             option.setName('project_name')
                 .setDescription('The name of the project')
-                .setRequired(true))
+                .setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('scrum-update')
+        .setDescription('View today\'s updates, plans, and impediments for a selected project')
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);

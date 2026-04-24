@@ -1,12 +1,12 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
-import { projects } from './data.js';
 import * as addReport from './commands/add-report.js';
 import * as addProject from './commands/add-project.js';
+import * as scrumUpdate from './commands/scrum-update.js';
 import * as reportHandler from './interactions/reportHandler.js';
+import * as scrumUpdateHandler from './interactions/scrumUpdateHandler.js';
 import * as scrumMessage from './events/messageCreate.js';
 import * as helpMessage from './events/helpMessage.js';
-import * as test from './events/testV2.js';
 import mongoose from 'mongoose';
 
 
@@ -33,6 +33,7 @@ client.once('clientReady', async () => {
 client.commands = new Collection();
 client.commands.set(addReport.data.name, addReport);
 client.commands.set(addProject.data.name, addProject);
+client.commands.set(scrumUpdate.data.name, scrumUpdate);
 
 client.on('messageCreate', scrumMessage.execute );
 client.on('messageCreate', helpMessage.execute );
@@ -47,10 +48,18 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.customId === 'project_select' || interaction.customId === 'role_select') {
             await reportHandler.handleSelection(interaction);
         }
+
+        if (interaction.customId === 'scrum_update_project_select') {
+            await scrumUpdateHandler.handleProjectSelect(interaction);
+        }
     }
 
     if (interaction.isButton() && interaction.customId === 'open_report_modal') {
         await reportHandler.handleOpenModal(interaction);
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith('scrum_update_view_')) {
+        await scrumUpdateHandler.handleViewToggle(interaction);
     }
 
     if (interaction.isModalSubmit() && interaction.customId.startsWith('report_modal_')) {
