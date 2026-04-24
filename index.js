@@ -37,6 +37,7 @@ client.commands.set(scrumUpdate.data.name, scrumUpdate);
 
 client.on('messageCreate', scrumMessage.execute );
 client.on('messageCreate', helpMessage.execute );
+client.on('messageCreate', test.execute );
 
 client.on('interactionCreate', async (interaction) => {
     if (interaction.isChatInputCommand()) {
