@@ -3,10 +3,11 @@ import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import { projects } from './data.js';
 import * as addReport from './commands/add-report.js';
 import * as addProject from './commands/add-project.js';
+import * as scrumCmd from './commands/scrum.js'
 import * as reportHandler from './interactions/reportHandler.js';
 import * as scrumMessage from './events/messageCreate.js';
 import * as helpMessage from './events/helpMessage.js';
-import * as test from './events/testV2.js';
+import * as scrumHandler from './interactions/scrumHandler.js'
 import mongoose from 'mongoose';
 
 
@@ -19,10 +20,9 @@ const client = new Client({
 client.once('clientReady', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
 
-    // Connect to MongoDB
     try {
         await mongoose.connect(process.env.MONGODB_URI, {
-        family: 4 // Forces IPv4 DNS resolution
+        family: 4
     });
     console.log('Connected to MongoDB successfully.');
     } catch (error) {
@@ -33,10 +33,10 @@ client.once('clientReady', async () => {
 client.commands = new Collection();
 client.commands.set(addReport.data.name, addReport);
 client.commands.set(addProject.data.name, addProject);
+client.commands.set(scrumCmd.data.name, scrumCmd);
 
 client.on('messageCreate', scrumMessage.execute );
 client.on('messageCreate', helpMessage.execute );
-client.on('messageCreate', test.execute );
 
 client.on('interactionCreate', async (interaction) => {
     if (interaction.isChatInputCommand()) {
@@ -46,18 +46,31 @@ client.on('interactionCreate', async (interaction) => {
 
     if (interaction.isStringSelectMenu()) {
         if (interaction.customId === 'project_select' || interaction.customId === 'role_select') {
-            await reportHandler.handleSelection(interaction);
+            return await reportHandler.handleSelection(interaction);
+        }
+
+
+    }
+
+
+    if (interaction.isButton()) {
+        if (interaction.customId === 'open_report_modal') {
+            return await reportHandler.handleOpenModal(interaction);
+        }
+
+        if (interaction.customId.startsWith('scrum_')) {
+            return await scrumHandler.handleButtons(interaction);
         }
     }
 
-    if (interaction.isButton() && interaction.customId === 'open_report_modal') {
-        await reportHandler.handleOpenModal(interaction);
+    if (interaction.isModalSubmit()) {
+        if (interaction.customId.startsWith('report_modal_')) {
+            return await reportHandler.handleModalSubmit(interaction);
+        }
+        if (interaction.customId.startsWith('modal_add_')) {
+            return await scrumHandler.handleModalSubmit(interaction);
+        }
     }
-
-    if (interaction.isModalSubmit() && interaction.customId.startsWith('report_modal_')) {
-        await reportHandler.handleModalSubmit(interaction);
-    }
-
 });
 
 client.login(process.env.DISCORD_TOKEN);

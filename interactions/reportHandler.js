@@ -51,7 +51,6 @@ export async function handleOpenModal(interaction) {
         .setLabel('Plans')
         .setStyle(TextInputStyle.Paragraph);
         
-    // Updated label and ID to align with convention
     const impedimentsInput = new TextInputBuilder()
         .setCustomId('impediments_input') 
         .setLabel('Impediments')
