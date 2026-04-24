@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, StringSelectMenuBuilder, ActionRowBuilder, EmbedBuilder, ButtonBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import Project from '../models/Project.js'; 
 import Role from '../models/Role.js';
 
@@ -20,41 +20,70 @@ export async function execute(interaction) {
             });
         }
 
-        const prEmbed = new EmbedBuilder()
-            .setColor(0x3498DB)
-            .setTitle('Submit Daily Scrum Report')
-            .setDescription('Select **Project** and **Role** below to start: ');
-
-        const projectMenu = new StringSelectMenuBuilder()
-            .setCustomId('project_select')
-            .setPlaceholder('Select a project')
-            .addOptions(projects.map(proj => ({ label: proj.name, value: proj.name })));
-        
-        const roleMenu = new StringSelectMenuBuilder()
-            .setCustomId('role_select')
-            .setPlaceholder('Select your role')
-            .addOptions(roles.map(role => ({ label: role.name, value: role.name })));
-
-        const writeButton = new ButtonBuilder()
-            .setCustomId('open_report_modal')
-            .setLabel('Write Report')
-            .setStyle('Success')
-            .setDisabled(true);
-
-        await interaction.reply({
-            embeds: [prEmbed],
+        // V2 Payload Construction
+        const payload = {
+            flags: 32768, // IS_COMPONENTS_V2 flag
             components: [
-                new ActionRowBuilder().addComponents(projectMenu),
-                new ActionRowBuilder().addComponents(roleMenu),
-                new ActionRowBuilder().addComponents(writeButton)
+                {
+                    type: 17, // CONTAINER
+                    accent_color: 0x3498DB, // The "Embed" color
+                    components: [
+                        {
+                            type: 10, // TEXT_DISPLAY (Title)
+                            content: "## Submit Daily Scrum Report\nSelect **Project** and **Role** below to start:"
+                        },
+                        {
+                            type: 1, // ACTION_ROW for Project Select
+                            components: [
+                                {
+                                    type: 3, // STRING_SELECT
+                                    custom_id: 'project_select',
+                                    placeholder: 'Select a project',
+                                    options: projects.map(proj => ({ 
+                                        label: proj.name, 
+                                        value: proj.name 
+                                    }))
+                                }
+                            ]
+                        },
+                        {
+                            type: 1, // ACTION_ROW for Role Select
+                            components: [
+                                {
+                                    type: 3, // STRING_SELECT
+                                    custom_id: 'role_select',
+                                    placeholder: 'Select your role',
+                                    options: roles.map(role => ({ 
+                                        label: role.name, 
+                                        value: role.name 
+                                    }))
+                                }
+                            ]
+                        },
+                        {
+                            type: 1, // ACTION_ROW for Button
+                            components: [
+                                {
+                                    type: 2, // BUTTON
+                                    custom_id: 'open_report_modal',
+                                    label: 'Write Report',
+                                    style: 3, // Success (Green)
+                                    disabled: true
+                                }
+                            ]
+                        }
+                    ]
+                }
             ],
             ephemeral: true
-        });
+        };
+
+        await interaction.reply(payload);
 
     } catch (error) {
         console.error('Database error in add-report:', error);
         await interaction.reply({
-            content: 'Failed to retrieve projects from the database.',
+            content: 'Failed to retrieve data from the database.',
             ephemeral: true
         });
     }

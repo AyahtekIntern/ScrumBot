@@ -30,7 +30,7 @@ export async function execute(message) {
             }
 
         const scrumFields = humanMembers.map(member => {
-            // Background match using the system username stored in the database
+            
             const hasUpdated = todaysReports.some(r => r.username === member.user.username);
             
             return {

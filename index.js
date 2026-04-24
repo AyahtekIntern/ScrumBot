@@ -6,6 +6,7 @@ import * as addProject from './commands/add-project.js';
 import * as reportHandler from './interactions/reportHandler.js';
 import * as scrumMessage from './events/messageCreate.js';
 import * as helpMessage from './events/helpMessage.js';
+import * as test from './events/testV2.js';
 import mongoose from 'mongoose';
 
 
