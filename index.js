@@ -50,7 +50,9 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.customId === 'project_select' || interaction.customId === 'role_select') {
             return await reportHandler.handleSelection(interaction);
         }
-
+        if (interaction.customId === 'scrum_update_project_select') {
+            await scrumUpdateHandler.handleProjectSelect(interaction);
+        }
 
     }
 
@@ -60,13 +62,14 @@ client.on('interactionCreate', async (interaction) => {
             return await reportHandler.handleOpenModal(interaction);
         }
 
+        if (interaction.customId.startsWith('scrum_update_view_')) {
+            return await scrumUpdateHandler.handleViewToggle(interaction);
+        }
+
         if (interaction.customId.startsWith('scrum_')) {
             return await scrumHandler.handleButtons(interaction);
         }
-
-        if (interaction.customId === 'scrum_update_project_select') {
-            await scrumUpdateHandler.handleProjectSelect(interaction);
-        }
+        
     }
 
     if (interaction.isModalSubmit()) {
@@ -76,14 +79,6 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.customId.startsWith('modal_add_')) {
             return await scrumHandler.handleModalSubmit(interaction);
         }
-    }
-
-    if (interaction.isButton() && interaction.customId.startsWith('scrum_update_view_')) {
-        await scrumUpdateHandler.handleViewToggle(interaction);
-    }
-
-    if (interaction.isModalSubmit() && interaction.customId.startsWith('report_modal_')) {
-        await reportHandler.handleModalSubmit(interaction);
     }
 
 });

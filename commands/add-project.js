@@ -13,7 +13,6 @@ export async function execute(interaction) {
     const projectName = interaction.options.getString('project_name');
     
     try {
-        // 1. Check if the project already exists to prevent duplicate errors
         const existingProject = await Project.findOne({ name: projectName });
         if (existingProject) {
             return interaction.reply({
@@ -21,8 +20,6 @@ export async function execute(interaction) {
                 ephemeral: true
             });
         }
-
-        // 2. Save the new project to MongoDB
         await Project.create({ name: projectName });
 
         const projectEmbed = new EmbedBuilder()

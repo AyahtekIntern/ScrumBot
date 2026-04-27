@@ -23,7 +23,7 @@ export async function showDashboard(interaction) {
             type: ComponentType.Container,
             accent_color: 0x5865F2,
             components: [
-                { type: ComponentType.TextDisplay, content: "# 🛠️ Scrum Management Dashboard" },
+                { type: ComponentType.TextDisplay, content: "# Project and Role List" },
                 { type: ComponentType.TextDisplay, content: `### 📁 Projects\n${projectList}\n\n### 👤 Roles\n${roleList}` },
                 {
                     type: ComponentType.ActionRow,

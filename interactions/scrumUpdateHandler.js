@@ -42,7 +42,6 @@ function formatPlainList(reports, key, emptyMessage) {
     if (reports.length === 0) {
         return emptyMessage;
     }
-
     return reports
         .map((report) => `- **${report.username}** (${report.role || 'Unassigned'}): ${report[key]}`)
         .join('\n');

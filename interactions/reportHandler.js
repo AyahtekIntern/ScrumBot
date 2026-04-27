@@ -3,11 +3,28 @@ import Report from '../models/Report.js';
 import Role from '../models/Role.js'; 
 
 export async function handleSelection(interaction) {
-    const { components } = interaction.message;
+
+    if (!interaction.isStringSelectMenu()) return;
+    const rawComponents = interaction.message?.components ?? interaction.message?.data?.components;
     const selectedValue = interaction.values[0];
     const isProject = interaction.customId === 'project_select';
 
-    const newRows = components.map((row, index) => {
+    if (!Array.isArray(rawComponents) || rawComponents.length === 0) {
+        console.error('handleSelection: missing interaction message components', {
+            customId: interaction.customId,
+            message: interaction.message
+        });
+        return await interaction.reply({
+            content: 'Unable to update your selection. Please try again.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    const actionRows = rawComponents[0]?.type === 17 && Array.isArray(rawComponents[0].components)
+        ? rawComponents[0].components.filter(row => row.type === 1)
+        : rawComponents.filter(row => row.type === 1);
+
+    const newRows = actionRows.map((row, index) => {
         const actionRow = ActionRowBuilder.from(row);
         
         if ((isProject && index === 0) || (!isProject && index === 1)) {
@@ -28,14 +45,30 @@ export async function handleSelection(interaction) {
     }
 
     await interaction.update({ 
-        components: newRows 
+        components: [{ type: 17, components: newRows }] 
     });
 }
 
 
 export async function handleOpenModal(interaction) {
-    const project = interaction.message.components[0].components[0].placeholder.split(': ')[1];
-    const role = interaction.message.components[1].components[0].placeholder.split(': ')[1];
+    const rawComponents = interaction.message?.components ?? interaction.message?.data?.components;
+    const actionRows = rawComponents?.[0]?.type === 17 && Array.isArray(rawComponents[0].components)
+        ? rawComponents[0].components.filter(row => row.type === 1)
+        : rawComponents?.filter(row => row.type === 1);
+
+    if (!Array.isArray(actionRows) || actionRows.length < 2) {
+        console.error('handleOpenModal: invalid message components', {
+            customId: interaction.customId,
+            message: interaction.message
+        });
+        return interaction.reply({
+            content: 'Unable to open the report modal. Please try again.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    const project = actionRows[0].components[0].placeholder.split(': ')[1];
+    const role = actionRows[1].components[0].placeholder.split(': ')[1];
 
     const modal = new ModalBuilder()
         .setCustomId(`report_modal_${project}_${role}`)
