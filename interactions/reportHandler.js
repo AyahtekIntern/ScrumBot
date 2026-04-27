@@ -1,6 +1,37 @@
 import { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, MessageFlags } from 'discord.js';
 import Report from '../models/Report.js';
-import Role from '../models/Role.js'; 
+
+function getTodayInputValue() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function parseLocalDateInput(dateInput) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+        return null;
+    }
+
+    const [yearStr, monthStr, dayStr] = dateInput.split('-');
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+
+    const parsed = new Date(year, month - 1, day);
+
+    // Reject invalid calendar dates like 2026-02-30.
+    if (
+        parsed.getFullYear() !== year ||
+        parsed.getMonth() !== month - 1 ||
+        parsed.getDate() !== day
+    ) {
+        return null;
+    }
+
+    return parsed;
+}
 
 export async function handleSelection(interaction) {
 
@@ -90,10 +121,19 @@ export async function handleOpenModal(interaction) {
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(false);
 
+    const reportDateInput = new TextInputBuilder()
+        .setCustomId('report_date_input')
+        .setLabel('Report date (YYYY-MM-DD)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder(getTodayInputValue())
+        .setValue(getTodayInputValue())
+        .setRequired(true);
+
     modal.addComponents(
         new ActionRowBuilder().addComponents(updateInput),
         new ActionRowBuilder().addComponents(planInput),
-        new ActionRowBuilder().addComponents(impedimentsInput)
+        new ActionRowBuilder().addComponents(impedimentsInput),
+        new ActionRowBuilder().addComponents(reportDateInput)
     );
 
     await interaction.showModal(modal);
@@ -109,7 +149,16 @@ export async function handleModalSubmit(interaction) {
     
     const updates = interaction.fields.getTextInputValue('update_input');
     const plans = interaction.fields.getTextInputValue('plan_input');
-    const impediments = interaction.fields.getTextInputValue('impediments_input') || "None"; 
+    const impediments = interaction.fields.getTextInputValue('impediments_input') || 'None';
+    const reportDateInput = interaction.fields.getTextInputValue('report_date_input').trim();
+    const reportDate = parseLocalDateInput(reportDateInput);
+
+    if (!reportDate) {
+        return interaction.reply({
+            content: 'Invalid date format. Please use YYYY-MM-DD.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
 
     try {
         await Report.create({
@@ -118,7 +167,8 @@ export async function handleModalSubmit(interaction) {
             role: role,
             updates: updates,
             plans: plans,
-            impediments: impediments
+            impediments: impediments,
+            date: reportDate
         });
 
         const successEmbed = new EmbedBuilder()

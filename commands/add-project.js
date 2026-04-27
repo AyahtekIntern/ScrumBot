@@ -17,7 +17,7 @@ export async function execute(interaction) {
         if (existingProject) {
             return interaction.reply({
                 content: `The project **${projectName}** already exists in the database.`,
-                ephemeral: true
+                ephemeral: false
             });
         }
         await Project.create({ name: projectName });
@@ -29,14 +29,14 @@ export async function execute(interaction) {
 
         await interaction.reply({
             embeds: [projectEmbed],
-            ephemeral: true
+            ephemeral: false
         });
 
     } catch (error) {
         console.error('Database error in add-project:', error);
         await interaction.reply({
             content: 'An error occurred while saving to the database.',
-            ephemeral: true
+            ephemeral: false
         });
     }
 }

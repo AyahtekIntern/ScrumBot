@@ -16,7 +16,7 @@ export async function execute(interaction) {
         if (projects.length === 0) {
             return interaction.reply({
                 content: 'No projects exist in the database. Use `/add-project` first.',
-                ephemeral: true
+                ephemeral: false
             });
         }
 
@@ -75,7 +75,7 @@ export async function execute(interaction) {
                     ]
                 }
             ],
-            ephemeral: true
+            ephemeral: false
         };
 
         await interaction.reply(payload);
@@ -84,7 +84,7 @@ export async function execute(interaction) {
         console.error('Database error in add-report:', error);
         await interaction.reply({
             content: 'Failed to retrieve data from the database.',
-            ephemeral: true
+            ephemeral: false
         });
     }
 }
