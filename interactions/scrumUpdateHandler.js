@@ -118,7 +118,7 @@ function buildPayload(projects, selectedProject, activeTab, panelBody) {
                 ]
             }
         ],
-        ephemeral: true
+        ephemeral: false
     };
 }
 
@@ -140,7 +140,7 @@ async function createViewPayload(selectedProject, activeTab) {
     if (projects.length === 0) {
         return {
             content: 'No projects exist in the database. Use `/add-project` first.',
-            ephemeral: true
+            ephemeral: false
         };
     }
 
@@ -159,7 +159,7 @@ export async function sendInitialScrumUpdate(interaction) {
         console.error('Database error in scrum-update:', error);
         await interaction.reply({
             content: 'Failed to load scrum updates from the database.',
-            ephemeral: true
+            ephemeral: false
         });
     }
 }

@@ -39,7 +39,7 @@ export async function showDashboard(interaction) {
     if (interaction.isButton() || interaction.isModalSubmit()) {
         return await interaction.update(payload);
     }
-    await interaction.reply({ ...payload, ephemeral: true });
+    await interaction.reply({ ...payload, ephemeral: false });
 }
 
 export async function handleButtons(interaction) {
