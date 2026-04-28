@@ -55,7 +55,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     if (interaction.isButton()) {
-        if (interaction.customId === 'open_report_modal') {
+        if (interaction.customId === 'open_report_modal' || interaction.customId === 'update_report_modal') {
             return await reportHandler.handleOpenModal(interaction);
         }
 
