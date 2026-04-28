@@ -1,5 +1,76 @@
 import { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, MessageFlags } from 'discord.js';
+import Project from '../models/Project.js';
+import Role from '../models/Role.js';
 import Report from '../models/Report.js';
+
+export async function showReportInterface(interaction) {
+    try {
+        const [projects, roles] = await Promise.all([
+            Project.find(),
+            Role.find()
+        ]);
+
+        if (projects.length === 0) {
+            return interaction.reply({
+                content: 'No projects exist in the database. Use `/add-project` first.',
+                ephemeral: true
+            });
+        }
+
+        const payload = {
+            flags: 32768,
+            components: [
+                {
+                    type: 17,
+                    accent_color: 0x3498DB,
+                    components: [
+                        {
+                            type: 10,
+                            content: "## Submit Daily Scrum Report\nSelect **Project** and **Role** below to start:"
+                        },
+                        {
+                            type: 1,
+                            components: [{
+                                type: 3,
+                                custom_id: 'project_select',
+                                placeholder: 'Select a project',
+                                options: projects.map(proj => ({ label: proj.name, value: proj.name }))
+                            }]
+                        },
+                        {
+                            type: 1,
+                            components: [{
+                                type: 3,
+                                custom_id: 'role_select',
+                                placeholder: 'Select your role',
+                                options: roles.map(role => ({ label: role.name, value: role.name }))
+                            }]
+                        },
+                        {
+                            type: 1,
+                            components: [{
+                                type: 2,
+                                custom_id: 'open_report_modal',
+                                label: 'Write Report',
+                                style: 3,
+                                disabled: true
+                            }]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        await interaction.reply(payload);
+
+    } catch (error) {
+        console.error('Error in showReportInterface:', error);
+        await interaction.reply({
+            content: 'Failed to retrieve data from the database.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+}
 
 function getTodayInputValue() {
     const now = new Date();
@@ -163,6 +234,7 @@ export async function handleModalSubmit(interaction) {
     try {
         await Report.create({
             username: interaction.user.username,
+            displayName: interaction.member.displayName,
             projectName: projectName,
             role: role,
             updates: updates,

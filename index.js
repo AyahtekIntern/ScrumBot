@@ -12,8 +12,6 @@ import * as scrumHandler from './interactions/scrumHandler.js'
 import mongoose from 'mongoose';
 
 
-
-
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers],
 });
@@ -55,7 +53,6 @@ client.on('interactionCreate', async (interaction) => {
         }
 
     }
-
 
     if (interaction.isButton()) {
         if (interaction.customId === 'open_report_modal') {

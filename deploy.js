@@ -3,23 +3,17 @@ import 'dotenv/config';
 
 const commands = [
     new SlashCommandBuilder()
-        .setName('add-report')
-        .setDescription('Submit your daily scrum report'),
-    new SlashCommandBuilder()
-        .setName('add-project')
-        .setDescription('Add a new project to the list')
-        .addStringOption(option => 
-            option.setName('project_name')
-                .setDescription('The name of the project')
-                .setRequired(true)),
-
-    new SlashCommandBuilder()
         .setName('scrum')
         .setDescription('Show list of all existing projects and roles'),
 
     new SlashCommandBuilder()
         .setName('scrum-update')
-        .setDescription('View today\'s updates, plans, and impediments for a selected project')
+        .setDescription('View today\'s updates, plans, and impediments for a selected project'),
+
+    new SlashCommandBuilder()
+        .setName('add-report')
+        .setDescription('Submit your daily scrum report')
+        
         
 ].map(command => command.toJSON());
 

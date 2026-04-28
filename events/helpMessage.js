@@ -28,7 +28,7 @@ export async function execute(message) {
                     value: 'Displays this helpful menu.' 
                 }
             )
-            .setFooter({ text: 'SkramBol' })
+            .setFooter({ text: 'Marvin' })
             .setTimestamp();
             
 

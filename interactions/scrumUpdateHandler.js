@@ -27,7 +27,7 @@ function formatRoleGroupedUpdates(reports) {
     const groupedByRole = reports.reduce((acc, report) => {
         const role = report.role || 'Unassigned';
         if (!acc[role]) acc[role] = [];
-        acc[role].push(`- **${report.username}**: ${report.updates}`);
+        acc[role].push(`- **${report.displayName}**: ${report.updates}`);
         return acc;
     }, {});
 
@@ -43,7 +43,7 @@ function formatPlainList(reports, key, emptyMessage) {
         return emptyMessage;
     }
     return reports
-        .map((report) => `- **${report.username}** (${report.role || 'Unassigned'}): ${report[key]}`)
+        .map((report) => `- **${report.displayName}** (${report.role || 'Unassigned'}): ${report[key]}`)
         .join('\n');
 }
 
