@@ -62,6 +62,10 @@ client.on('interactionCreate', async (interaction) => {
             return await reportHandler.handleOpenModal(interaction);
         }
 
+        if (interaction.customId === 'scrum_update_open_date_modal') {
+            return await scrumUpdateHandler.handleOpenDateModal(interaction);
+        }
+
         if (interaction.customId.startsWith('scrum_update_view_')) {
             return await scrumUpdateHandler.handleViewToggle(interaction);
         }
@@ -75,6 +79,9 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.isModalSubmit()) {
         if (interaction.customId.startsWith('report_modal_')) {
             return await reportHandler.handleModalSubmit(interaction);
+        }
+        if (interaction.customId.startsWith('scrum_update_date_modal_')) {
+            return await scrumUpdateHandler.handleDateModalSubmit(interaction);
         }
         if (interaction.customId.startsWith('modal_add_') || interaction.customId.startsWith('modal_edit_')) {
             return await scrumHandler.handleModalSubmit(interaction);
