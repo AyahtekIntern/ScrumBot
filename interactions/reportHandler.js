@@ -2,6 +2,7 @@ import { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ModalBuilder,
 import Project from '../models/Project.js';
 import Role from '../models/Role.js';
 import Report from '../models/Report.js';
+import { parse } from 'dotenv';
 
 export async function showReportInterface(interaction) {
     try {
@@ -12,7 +13,7 @@ export async function showReportInterface(interaction) {
 
         if (projects.length === 0) {
             return interaction.reply({
-                content: 'No projects exist in the database. Use `/add-project` first.',
+                content: 'No projects exist in the database. Use `/scrum` and add a project first.',
                 ephemeral: true
             });
         }
@@ -48,13 +49,22 @@ export async function showReportInterface(interaction) {
                         },
                         {
                             type: 1,
-                            components: [{
-                                type: 2,
-                                custom_id: 'open_report_modal',
-                                label: 'Write Report',
-                                style: 3,
-                                disabled: true
-                            }]
+                            components: [
+                                {
+                                    type: 2,
+                                    custom_id: 'open_report_modal',
+                                    label: 'Write New',
+                                    style: 3, 
+                                    disabled: true
+                                },
+                                {
+                                    type: 2,
+                                    custom_id: 'update_report_modal', 
+                                    label: 'Update Existing',
+                                    style: 1, 
+                                    disabled: true
+                                }
+                            ]
                         }
                     ]
                 }
@@ -142,8 +152,29 @@ export async function handleSelection(interaction) {
     const isReady = projPlaceholder.includes('Selected:') && rolePlaceholder.includes('Selected:');
 
     if (isReady) {
-        const enabledButton = ButtonBuilder.from(newRows[2].components[0]).setDisabled(false);
-        newRows[2].setComponents(enabledButton);
+        const project = projPlaceholder.split(': ')[1];
+        const role = rolePlaceholder.split(': ')[1];
+        const today = parseLocalDateInput(getTodayInputValue());
+
+        const existingReport = await Report.findOne({
+            username: interaction.user.username,
+            projectName: project,
+            role: role,
+            date: today
+        });
+
+        const hasReport = !!existingReport;
+
+        const writeBtn = ButtonBuilder.from(newRows[2].components[0])
+            .setDisabled(hasReport)
+            .setLabel(hasReport ? 'Report Already Submitted' : 'Write New');
+
+        const updateBtn = ButtonBuilder.from(newRows[2].components[1])
+            .setDisabled(!hasReport)
+            .setLabel(hasReport ? 'Update Existing' : 'No Report to Update');
+        
+        newRows[2].setComponents(writeBtn, updateBtn);
+    
     }
 
     await interaction.update({ 
@@ -172,24 +203,35 @@ export async function handleOpenModal(interaction) {
     const project = actionRows[0].components[0].placeholder.split(': ')[1];
     const role = actionRows[1].components[0].placeholder.split(': ')[1];
 
+    const today = parseLocalDateInput(getTodayInputValue());
+    const existingReport = await Report.findOne({
+        username: interaction.user.username,
+        projectName: project,
+        role: role,
+        date: today
+    });
+
     const modal = new ModalBuilder()
         .setCustomId(`report_modal_${project}_${role}`)
-        .setTitle(`${project} - Daily Update`);
+        .setTitle(existingReport ? `Edit: ${project}` : `New Report: ${project}`);
 
     const updateInput = new TextInputBuilder()
         .setCustomId('update_input')
         .setLabel('Updates')
-        .setStyle(TextInputStyle.Paragraph);
+        .setStyle(TextInputStyle.Paragraph)
+        .setValue(existingReport ? existingReport.updates : '');
         
     const planInput = new TextInputBuilder()
         .setCustomId('plan_input')
         .setLabel('Plans')
-        .setStyle(TextInputStyle.Paragraph);
+        .setStyle(TextInputStyle.Paragraph)
+        .setValue(existingReport ? existingReport.plans : '');
         
     const impedimentsInput = new TextInputBuilder()
         .setCustomId('impediments_input') 
         .setLabel('Impediments')
         .setStyle(TextInputStyle.Paragraph)
+        .setValue(existingReport ? existingReport.impediments : '')
         .setRequired(false);
 
     const reportDateInput = new TextInputBuilder()
@@ -232,16 +274,22 @@ export async function handleModalSubmit(interaction) {
     }
 
     try {
-        await Report.create({
-            username: interaction.user.username,
+        await Report.findOneAndUpdate(
+            {
+                username: interaction.user.username,
+                projectName: projectName,
+                role: role,
+                date: reportDate
+            },
+            {
             displayName: interaction.member.displayName,
-            projectName: projectName,
             role: role,
             updates: updates,
             plans: plans,
             impediments: impediments,
-            date: reportDate
-        });
+            },
+            { upsert: true, new: true }
+        );
 
         const successEmbed = new EmbedBuilder()
             .setColor(0x2ECC71)

@@ -27,14 +27,26 @@ function formatRoleGroupedUpdates(reports) {
     const groupedByRole = reports.reduce((acc, report) => {
         const role = report.role || 'Unassigned';
         if (!acc[role]) acc[role] = [];
-        acc[role].push(`- **${report.displayName}**: ${report.updates}`);
+
+        const subList = report.updates
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(line => {
+                const cleanLine = line.replace(/^[-*•]\s*/, '');
+                return `  ┕ ${cleanLine}`;
+            })
+            .join('\n');
+
+        acc[role].push(`* **${report.displayName}**:\n${subList}`);
+        
         return acc;
     }, {});
 
     const sortedRoles = Object.keys(groupedByRole).sort((a, b) => a.localeCompare(b));
 
     return sortedRoles
-        .map((role) => `### ${role}\n${groupedByRole[role].join('\n')}`)
+        .map((role) => `## ${role}\n${groupedByRole[role].join('\n')}`)
         .join('\n\n');
 }
 
@@ -42,9 +54,24 @@ function formatPlainList(reports, key, emptyMessage) {
     if (reports.length === 0) {
         return emptyMessage;
     }
+
     return reports
-        .map((report) => `- **${report.displayName}** (${report.role || 'Unassigned'}): ${report[key]}`)
-        .join('\n');
+        .map((report) => {
+            const rawValue = report[key] || '';
+
+            const subList = rawValue
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map(line => {
+                    const cleanLine = line.replace(/^[-*•]\s*/, '');
+                    return `  ┕ ${cleanLine}`;
+                })
+                .join('\n');
+
+            return `* **${report.displayName}** (${report.role || 'Dev'}):\n${subList}`;
+        })
+        .join('\n\n');
 }
 
 function getPanelBody(tab, reports) {
