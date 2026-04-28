@@ -51,6 +51,9 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.customId === 'scrum_update_project_select') {
             await scrumUpdateHandler.handleProjectSelect(interaction);
         }
+        if (interaction.customId.startsWith('scrum_edit_') || interaction.customId.startsWith('scrum_delete_')) {
+            return await scrumHandler.handleSelection(interaction);
+        }
 
     }
 
@@ -73,7 +76,7 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.customId.startsWith('report_modal_')) {
             return await reportHandler.handleModalSubmit(interaction);
         }
-        if (interaction.customId.startsWith('modal_add_')) {
+        if (interaction.customId.startsWith('modal_add_') || interaction.customId.startsWith('modal_edit_')) {
             return await scrumHandler.handleModalSubmit(interaction);
         }
     }
