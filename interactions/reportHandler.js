@@ -152,10 +152,29 @@ export async function handleSelection(interaction) {
     const isReady = projPlaceholder.includes('Selected:') && rolePlaceholder.includes('Selected:');
 
     if (isReady) {
-        const writeBtn = ButtonBuilder.from(newRows[2].components[0]).setDisabled(false);
-        const updateBtn = ButtonBuilder.from(newRows[2].components[1]).setDisabled(false);
+        const project = projPlaceholder.split(': ')[1];
+        const role = rolePlaceholder.split(': ')[1];
+        const today = parseLocalDateInput(getTodayInputValue());
+
+        const existingReport = await Report.findOne({
+            username: interaction.user.username,
+            projectName: project,
+            role: role,
+            date: today
+        });
+
+        const hasReport = !!existingReport;
+
+        const writeBtn = ButtonBuilder.from(newRows[2].components[0])
+            .setDisabled(hasReport)
+            .setLabel(hasReport ? 'Report Already Submitted' : 'Write New');
+
+        const updateBtn = ButtonBuilder.from(newRows[2].components[1])
+            .setDisabled(!hasReport)
+            .setLabel(hasReport ? 'Update Existing' : 'No Report to Update');
         
         newRows[2].setComponents(writeBtn, updateBtn);
+    
     }
 
     await interaction.update({ 
