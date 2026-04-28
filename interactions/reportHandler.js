@@ -328,7 +328,7 @@ export async function handleModalSubmit(interaction) {
             const userLink = `${interaction.member.displayName}`;
 
             await logChannel.send({
-                content: `📝 ${userLink} has ${action} report in **${projectName}**`,
+                content: `📝 **${userLink}** has ${action} report in **${projectName}**`,
                 allowedMentions: { parse: [] } 
             });
         }
