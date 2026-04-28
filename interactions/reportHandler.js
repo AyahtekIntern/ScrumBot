@@ -276,6 +276,13 @@ export async function handleModalSubmit(interaction) {
     }
 
     try {
+        const existingReport = await Report.findOne({
+            username: interaction.user.username,
+            projectName: projectName,
+            role: role,
+            date: reportDate
+        });
+
         await Report.findOneAndUpdate(
             {
                 username: interaction.user.username,
@@ -290,7 +297,7 @@ export async function handleModalSubmit(interaction) {
             plans: plans,
             impediments: impediments,
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         const successEmbed = new EmbedBuilder()
@@ -312,6 +319,20 @@ export async function handleModalSubmit(interaction) {
             });
         }
 
+        const LOG_CHANNEL_ID = '1498537343265669150'; 
+        const logChannel = interaction.client.channels.cache.get(LOG_CHANNEL_ID);
+
+        if (logChannel) {
+            const action = existingReport ? 'updated their' : 'submitted a new';
+            
+            const userLink = `${interaction.member.displayName}`;
+
+            await logChannel.send({
+                content: `📝 ${userLink} has ${action} report in **${projectName}**`,
+                allowedMentions: { parse: [] } 
+            });
+        }
+
     } catch (error) {
         console.error('Database error in handleModalSubmit:', error);
         
@@ -323,4 +344,5 @@ export async function handleModalSubmit(interaction) {
             await interaction.reply(errorMsg);
         }
     }
+    
 }
