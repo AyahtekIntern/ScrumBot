@@ -60,7 +60,9 @@ function getPanelBody(tab, reports) {
 }
 
 function buildPayload(projects, selectedProject, activeTab, panelBody) {
-    const encodedProject = encodeProject(selectedProject);
+    const hasSelection = Boolean(selectedProject);
+    const encodedProject = hasSelection ? encodeProject(selectedProject) : '';
+    const placeholder = hasSelection ? `Selected: ${selectedProject}` : '-- SELECT PROJECT --';
 
     return {
         flags: 32768,
@@ -79,11 +81,11 @@ function buildPayload(projects, selectedProject, activeTab, panelBody) {
                             {
                                 type: 3,
                                 custom_id: 'scrum_update_project_select',
-                                placeholder: 'Choose a project...',
+                                placeholder,
                                 options: projects.map((project) => ({
                                     label: project.name,
                                     value: project.name,
-                                    default: project.name === selectedProject
+                                    default: hasSelection && project.name === selectedProject
                                 }))
                             }
                         ]
@@ -95,19 +97,22 @@ function buildPayload(projects, selectedProject, activeTab, panelBody) {
                                 type: 2,
                                 custom_id: `scrum_update_view_updates_${encodedProject}`,
                                 label: 'Updates',
-                                style: activeTab === 'updates' ? 3 : 2
+                                style: activeTab === 'updates' ? 3 : 2,
+                                disabled: !hasSelection
                             },
                             {
                                 type: 2,
                                 custom_id: `scrum_update_view_plans_${encodedProject}`,
                                 label: 'Plans',
-                                style: activeTab === 'plans' ? 3 : 2
+                                style: activeTab === 'plans' ? 3 : 2,
+                                disabled: !hasSelection
                             },
                             {
                                 type: 2,
                                 custom_id: `scrum_update_view_impediments_${encodedProject}`,
                                 label: 'Impediments',
-                                style: activeTab === 'impediments' ? 4 : 2
+                                style: activeTab === 'impediments' ? 4 : 2,
+                                disabled: !hasSelection
                             }
                         ]
                     },
@@ -144,11 +149,19 @@ async function createViewPayload(selectedProject, activeTab) {
         };
     }
 
-    const resolvedProject = selectedProject || projects[0].name;
-    const reports = await getTodayReportsForProject(resolvedProject);
+    if (!selectedProject) {
+        return buildPayload(
+            projects,
+            null,
+            activeTab,
+            'Select a project from the dropdown to load updates.'
+        );
+    }
+
+    const reports = await getTodayReportsForProject(selectedProject);
     const panelBody = getPanelBody(activeTab, reports);
 
-    return buildPayload(projects, resolvedProject, activeTab, panelBody);
+    return buildPayload(projects, selectedProject, activeTab, panelBody);
 }
 
 export async function sendInitialScrumUpdate(interaction) {
@@ -184,6 +197,11 @@ export async function handleViewToggle(interaction) {
         const activeTab = parts[3];
         const encodedProject = parts.slice(4).join('_');
         const selectedProject = decodeProject(encodedProject);
+
+        if (!selectedProject) {
+            const payload = await createViewPayload(undefined, 'updates');
+            return interaction.update(payload);
+        }
 
         const payload = await createViewPayload(selectedProject, activeTab);
         await interaction.update(payload);
