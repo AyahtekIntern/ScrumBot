@@ -218,12 +218,14 @@ export async function handleOpenModal(interaction) {
     const updateInput = new TextInputBuilder()
         .setCustomId('update_input')
         .setLabel('Updates')
+        .setPlaceholder('Feature A completed\nFixed bug #123\n(Press Enter for new lines)')
         .setStyle(TextInputStyle.Paragraph)
         .setValue(existingReport ? existingReport.updates : '');
         
     const planInput = new TextInputBuilder()
         .setCustomId('plan_input')
         .setLabel('Plans')
+        .setPlaceholder('Continue dev\nContinue testing #123\n(Press Enter for new lines)')
         .setStyle(TextInputStyle.Paragraph)
         .setValue(existingReport ? existingReport.plans : '');
         
