@@ -229,7 +229,7 @@ async function createViewPayload(selectedProject, activeTab, selectedDate) {
 
     if (projects.length === 0) {
         return {
-            content: 'No projects exist in the database. Use `/add-project` first.',
+            content: 'No projects exist in the database. Use `/scrum` to add a project first.',
             ephemeral: false
         };
     }

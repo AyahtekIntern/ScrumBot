@@ -11,17 +11,13 @@ export async function execute(message) {
             .setTitle('🛠️ ScrumBot Help Guide')
             .setDescription('Welcome! Use this bot to manage daily scrum reports and track team progress.')
             .addFields(
-                {
-                    name: '`/add-project`',
-                    value: 'Add a new project to the database.'
-                },
                 { 
                     name: '`/add-report`', 
                     value: 'The main command. Select your **Project** and **Role** to open the daily update form.' 
                 },
                 { 
-                    name: '`!scrum-update`', 
-                    value: 'Shows a real-time list of who has submitted their report for today and who is still missing.' 
+                    name: '`/scrum-update`', 
+                    value: 'Shows a real-time list of updates for a selected project and date.' 
                 },
                 { 
                     name: '`!scrum-help`', 

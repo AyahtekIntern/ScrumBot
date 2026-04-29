@@ -1,12 +1,10 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import * as addReport from './commands/add-report.js';
-import * as addProject from './commands/add-project.js';
 import * as scrumCmd from './commands/scrum.js'
 import * as scrumUpdate from './commands/scrum-update.js';
 import * as reportHandler from './interactions/reportHandler.js';
 import * as scrumUpdateHandler from './interactions/scrumUpdateHandler.js';
-import * as scrumMessage from './events/messageCreate.js';
 import * as helpMessage from './events/helpMessage.js';
 import * as scrumHandler from './interactions/scrumHandler.js'
 import mongoose from 'mongoose';
@@ -31,11 +29,9 @@ client.once('clientReady', async () => {
 
 client.commands = new Collection();
 client.commands.set(addReport.data.name, addReport);
-client.commands.set(addProject.data.name, addProject);
 client.commands.set(scrumCmd.data.name, scrumCmd);
 client.commands.set(scrumUpdate.data.name, scrumUpdate);
 
-client.on('messageCreate', scrumMessage.execute );
 client.on('messageCreate', helpMessage.execute );
 
 client.on('interactionCreate', async (interaction) => {
