@@ -3,6 +3,12 @@ import Project from '../models/Project.js';
 import Role from '../models/Role.js';
 import Report from '../models/Report.js';
 
+const REPORT_BLOCKED_MESSAGE = 'Report submissions are closed from 11:00 PM to 8:00 AM. Please try again later.';
+
+export function isReportSubmissionBlocked() {
+    const hour = new Date().getHours();
+    return hour >= 23 || hour < 8;
+}
 
 export async function showReportInterface(interaction) {
     try {
@@ -184,6 +190,13 @@ export async function handleSelection(interaction) {
 
 
 export async function handleOpenModal(interaction) {
+    if (isReportSubmissionBlocked()) {
+        return interaction.reply({
+            content: REPORT_BLOCKED_MESSAGE,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
     const rawComponents = interaction.message?.components ?? interaction.message?.data?.components;
     const actionRows = rawComponents?.[0]?.type === 17 && Array.isArray(rawComponents[0].components)
         ? rawComponents[0].components.filter(row => row.type === 1)
@@ -257,6 +270,13 @@ export async function handleOpenModal(interaction) {
 
 
 export async function handleModalSubmit(interaction) {
+    if (isReportSubmissionBlocked()) {
+        return interaction.reply({
+            content: REPORT_BLOCKED_MESSAGE,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
     const parts = interaction.customId.split('_');
 
     const role = parts.pop();
