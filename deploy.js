@@ -1,4 +1,4 @@
-import { REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { REST, Routes, SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import 'dotenv/config';
 
 const commands = [
@@ -12,7 +12,13 @@ const commands = [
 
     new SlashCommandBuilder()
         .setName('add-report')
-        .setDescription('Submit your daily scrum report')
+        .setDescription('Submit your daily scrum report'),
+
+    new SlashCommandBuilder()
+        .setName("delete")
+        .setDescription("Delete reports within a specified date range")
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .setDMPermission(false)
         
         
 ].map(command => command.toJSON());

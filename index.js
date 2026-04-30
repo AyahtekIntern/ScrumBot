@@ -3,10 +3,12 @@ import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import * as addReport from './commands/add-report.js';
 import * as scrumCmd from './commands/scrum.js'
 import * as scrumUpdate from './commands/scrum-update.js';
+import * as deleteCmd from './commands/delete.js';
 import * as reportHandler from './interactions/reportHandler.js';
 import * as scrumUpdateHandler from './interactions/scrumUpdateHandler.js';
 import * as helpMessage from './events/helpMessage.js';
 import * as scrumHandler from './interactions/scrumHandler.js'
+import * as deleteHandler from './interactions/deleteHandler.js';
 import mongoose from 'mongoose';
 
 
@@ -31,6 +33,7 @@ client.commands = new Collection();
 client.commands.set(addReport.data.name, addReport);
 client.commands.set(scrumCmd.data.name, scrumCmd);
 client.commands.set(scrumUpdate.data.name, scrumUpdate);
+client.commands.set(deleteCmd.data.name, deleteCmd);
 
 client.on('messageCreate', helpMessage.execute );
 
@@ -66,9 +69,14 @@ client.on('interactionCreate', async (interaction) => {
             return await scrumUpdateHandler.handleViewToggle(interaction);
         }
 
+        if (interaction.customId.startsWith('scrum_confirm_delete_')) {
+            return await deleteHandler.handleConfirmDelete(interaction);
+        }
+
         if (interaction.customId.startsWith('scrum_')) {
             return await scrumHandler.handleButtons(interaction);
         }
+
         
     }
 
@@ -81,6 +89,9 @@ client.on('interactionCreate', async (interaction) => {
         }
         if (interaction.customId.startsWith('modal_add_') || interaction.customId.startsWith('modal_edit_')) {
             return await scrumHandler.handleModalSubmit(interaction);
+        }
+        if (interaction.customId === 'delete_reports_modal') {
+            return await deleteHandler.handleModalSubmit(interaction);
         }
     }
 
