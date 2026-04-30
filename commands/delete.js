@@ -8,5 +8,5 @@ export const data = new SlashCommandBuilder()
     .setDMPermission(false);
 
 export async function execute(interaction) {
-    await deleteHandler.showDeleteModal(interaction);
+    await deleteHandler.showProjectSelection(interaction);
 }

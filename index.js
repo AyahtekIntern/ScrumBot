@@ -53,6 +53,9 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.customId.startsWith('scrum_edit_') || interaction.customId.startsWith('scrum_delete_')) {
             return await scrumHandler.handleSelection(interaction);
         }
+        if (interaction.customId === 'delete_reports_project_select') {
+            return await deleteHandler.handleProjectSelect(interaction);
+        }
 
     }
 
@@ -69,7 +72,7 @@ client.on('interactionCreate', async (interaction) => {
             return await scrumUpdateHandler.handleViewToggle(interaction);
         }
 
-        if (interaction.customId.startsWith('scrum_confirm_delete_')) {
+        if (interaction.customId.startsWith('confirm_del_')) {
             return await deleteHandler.handleConfirmDelete(interaction);
         }
 
@@ -89,6 +92,9 @@ client.on('interactionCreate', async (interaction) => {
         }
         if (interaction.customId.startsWith('modal_add_') || interaction.customId.startsWith('modal_edit_')) {
             return await scrumHandler.handleModalSubmit(interaction);
+        }
+        if (interaction.customId.startsWith('delete_modal_')) {
+            return await deleteHandler.handleModalSubmit(interaction);
         }
         if (interaction.customId === 'delete_reports_modal') {
             return await deleteHandler.handleModalSubmit(interaction);

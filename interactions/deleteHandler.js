@@ -1,5 +1,6 @@
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import Report from '../models/Report.js';
+import Project from '../models/Project.js';
 
 const AUTHORIZED_ROLE_ID = '1498954138619220109';
 
@@ -21,6 +22,67 @@ function parseLocalDateInput(dateInput) {
     const [year, month, day] = dateInput.split('-').map(Number);
     const parsed = new Date(year, month - 1, day);
     return (parsed.getFullYear() === year && parsed.getMonth() === month - 1) ? parsed : null;
+}
+
+export async function showProjectSelection(interaction) {
+    const projects = await Project.find().sort({ name: 1 });
+
+    if (projects.length === 0) {
+        return interaction.reply({ content: "No projects found.", flags: [MessageFlags.Ephemeral] });
+    }
+
+    const payload = {
+        flags: 32768,
+        components: [{
+            type: ComponentType.Container,
+            accent_color: 0x5865F2,
+            components: [
+                { type: ComponentType.TextDisplay, content: "## 🗑️ Delete Reports\nSelect the project you want to clear reports from:" },
+                {
+                    type: ComponentType.ActionRow,
+                    components: [{
+                        type: ComponentType.StringSelect,
+                        custom_id: 'delete_reports_project_select',
+                        placeholder: 'Choose a project...',
+                        options: projects.map(p => ({ label: p.name, value: p.name }))
+                    }]
+                }
+            ]
+        }]
+    };
+
+    await interaction.reply({ ...payload, ephemeral: true });
+}
+
+export async function handleProjectSelect(interaction) {
+    const projectName = interaction.values[0];
+
+    await interaction.showModal({
+        title: `Delete: ${projectName}`,
+        custom_id: `delete_modal_${projectName}`, 
+        components: [
+            {
+                type: ComponentType.ActionRow,
+                components: [{
+                    type: 4,
+                    custom_id: 'from_date',
+                    label: 'From Date (YYYY-MM-DD)',
+                    style: 1,
+                    required: true
+                }]
+            },
+            {
+                type: ComponentType.ActionRow,
+                components: [{
+                    type: 4,
+                    custom_id: 'to_date',
+                    label: 'To Date (YYYY-MM-DD)',
+                    style: 1,
+                    required: true
+                }]
+            }
+        ]
+    });
 }
 
 export async function showDeleteModal(interaction) {
@@ -66,19 +128,9 @@ export async function showDeleteModal(interaction) {
 }
 
 export async function handleModalSubmit(interaction) {
+    const projectName = interaction.customId.split('_')[2]; // Get project from ID
     const fromStr = interaction.fields.getTextInputValue('from_date').trim();
     const toStr = interaction.fields.getTextInputValue('to_date').trim();
-
-    const fromDate = parseLocalDateInput(fromStr);
-    const toDate = parseLocalDateInput(toStr);
-
-    if (!fromDate || !toDate) {
-        return interaction.reply({
-            content: '❌ Invalid date format. Use YYYY-MM-DD.',
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
-
 
     const payload = {
         flags: 32768,
@@ -86,24 +138,16 @@ export async function handleModalSubmit(interaction) {
             type: ComponentType.Container,
             accent_color: 0xE74C3C,
             components: [
-                { 
-                    type: ComponentType.TextDisplay, 
-                    content: "# ⚠️ Confirm Mass Deletion" 
-                },
-                { 
-                    type: ComponentType.TextDisplay, 
-                    content: `You are about to delete all reports from **${fromStr}** to **${toStr}**.\n\n*This action is permanent and cannot be undone.*` 
-                },
+                { type: ComponentType.TextDisplay, content: "# ⚠️ Final Confirmation" },
+                { type: ComponentType.TextDisplay, content: `Project: **${projectName}**\nRange: **${fromStr}** to **${toStr}**\n\n*Are you sure?*` },
                 {
                     type: ComponentType.ActionRow,
-                    components: [
-                        { 
-                            type: ComponentType.Button, 
-                            style: 4,
-                            label: "Confirm Permanent Delete", 
-                            custom_id: `scrum_confirm_delete_${fromStr}_${toStr}` 
-                        }
-                    ]
+                    components: [{
+                        type: ComponentType.Button,
+                        style: 4,
+                        label: "Confirm Delete",
+                        custom_id: `confirm_del_${projectName}_${fromStr}_${toStr}`
+                    }]
                 }
             ]
         }]
@@ -113,55 +157,25 @@ export async function handleModalSubmit(interaction) {
 }
 
 export async function handleConfirmDelete(interaction) {
-    const hasRole = interaction.member.roles.cache.has(AUTHORIZED_ROLE_ID);
-    const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+    const [, , projectName, fromStr, toStr] = interaction.customId.split('_');
 
-    if (!hasRole && !isAdmin) {
-        return interaction.update({
-            content: "❌ Security Check Failed: You do not have the required role to execute this deletion.",
-            components: [],
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
-
-    const parts = interaction.customId.split('_');
-    const toStr = parts[parts.length - 1];
-    const fromStr = parts[parts.length - 2];
-
-    const fromDate = parseLocalDateInput(fromStr);
-    const toDate = parseLocalDateInput(toStr);
-
-    try {
-        const result = await Report.deleteMany({
-            date: { $gte: fromDate, $lte: toDate }
-        });
-
-        await interaction.update({
-            flags: 32768, 
-            components: [{
-                type: ComponentType.Container,
-                accent_color: 0x2ECC71,
-                components: [
-                    { 
-                        type: ComponentType.TextDisplay, 
-                        content: "# ✅ Deletion Successful" 
-                    },
-                    { 
-                        type: ComponentType.TextDisplay, 
-                        content: `Successfully removed **${result.deletedCount}** reports for the range: \`${fromStr}\` to \`${toStr}\`.` 
-                    }
-                ]
-            }]
-        });
-
-    } catch (error) {
-        console.error('Mass delete error:', error);
-        
-        const errorContent = { content: 'An error occurred during deletion.', flags: [MessageFlags.Ephemeral] };
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp(errorContent);
-        } else {
-            await interaction.reply(errorContent);
+    const result = await Report.deleteMany({
+        projectName: projectName,
+        date: { 
+            $gte: parseLocalDateInput(fromStr), 
+            $lte: parseLocalDateInput(toStr) 
         }
-    }
+    });
+
+    await interaction.update({
+        flags: 32768,
+        components: [{
+            type: ComponentType.Container,
+            accent_color: 0x2ECC71,
+            components: [
+                { type: ComponentType.TextDisplay, content: "# ✅ Done" },
+                { type: ComponentType.TextDisplay, content: `Deleted **${result.deletedCount}** reports for **${projectName}**.` }
+            ]
+        }]
+    });
 }
