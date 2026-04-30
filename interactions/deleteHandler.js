@@ -68,6 +68,7 @@ export async function handleProjectSelect(interaction) {
                     custom_id: 'from_date',
                     label: 'From Date (YYYY-MM-DD)',
                     style: 1,
+                    placeholder: '2026-04-01',
                     required: true
                 }]
             },
@@ -78,6 +79,8 @@ export async function handleProjectSelect(interaction) {
                     custom_id: 'to_date',
                     label: 'To Date (YYYY-MM-DD)',
                     style: 1,
+                    placeholder: getTodayInputValue(),
+                    value: getTodayInputValue(),
                     required: true
                 }]
             }
@@ -120,6 +123,7 @@ export async function showDeleteModal(interaction) {
                     label: 'To Date (YYYY-MM-DD)',
                     style: 1,
                     placeholder: getTodayInputValue(),
+                    value: getTodayInputValue(),
                     required: true
                 }]
             }
@@ -131,6 +135,23 @@ export async function handleModalSubmit(interaction) {
     const projectName = interaction.customId.split('_')[2]; // Get project from ID
     const fromStr = interaction.fields.getTextInputValue('from_date').trim();
     const toStr = interaction.fields.getTextInputValue('to_date').trim();
+
+    const fromDate = parseLocalDateInput(fromStr);
+    const toDate = parseLocalDateInput(toStr);
+
+    if (!fromDate || !toDate) {
+        return interaction.reply({
+            content: '❌ Please use the YYYY-MM-DD format for both dates.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    if (fromDate > toDate) {
+        return interaction.reply({
+            content: '❌ The "From" date must be on or before the "To" date.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
 
     const payload = {
         flags: 32768,
@@ -159,11 +180,28 @@ export async function handleModalSubmit(interaction) {
 export async function handleConfirmDelete(interaction) {
     const [, , projectName, fromStr, toStr] = interaction.customId.split('_');
 
+    const fromDate = parseLocalDateInput(fromStr);
+    const toDate = parseLocalDateInput(toStr);
+
+    if (!fromDate || !toDate) {
+        return interaction.reply({
+            content: '❌ Invalid date range. Please try again with YYYY-MM-DD.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    if (fromDate > toDate) {
+        return interaction.reply({
+            content: '❌ The "From" date must be on or before the "To" date.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
     const result = await Report.deleteMany({
         projectName: projectName,
-        date: { 
-            $gte: parseLocalDateInput(fromStr), 
-            $lte: parseLocalDateInput(toStr) 
+        date: {
+            $gte: fromDate,
+            $lte: toDate
         }
     });
 
